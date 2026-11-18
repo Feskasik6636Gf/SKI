@@ -29,6 +29,20 @@ drone*=0.05+0.08*prog**1.2
 # диссонанс ближе к концу
 drone+=0.03*np.sin(2*np.pi*58.3*T)*np.clip((T-50)/20,0,1)
 music+=drone
+# --- музыка: аккорды (Am - F - C - E) и редкие ноты ---
+def pad(freqs,t0,d,g):
+    t=tt(d); e=np.minimum(t/2.5,1)*np.minimum((d-t)/2.5,1)
+    sig=sum(np.sin(2*np.pi*f*t)+0.4*np.sin(2*np.pi*f*2*t+0.3)+0.15*np.sin(2*np.pi*f*3.01*t) for f in freqs)*e
+    sig*=(0.7+0.3*np.sin(2*np.pi*0.25*t))
+    add(music,sig,t0,g)
+chords=[(110,164.8,220,261.6),(87.3,130.8,174.6,261.6),(130.8,196,261.6,329.6),(82.4,123.5,164.8,207.7)]
+mg=np.interp(np.arange(0,DUR,8),[0,30,55,DUR],[0.05,0.06,0.075,0.08])
+for i,t0 in enumerate(np.arange(0,DUR,8.0)): pad(chords[i%4],t0,9.5,mg[i]/4)
+notes=[440,523.3,659.3,523.3,587.3,493.9,659.3,880]
+t0=4.0;k=0
+while t0<DUR-2:
+    f=notes[(k*3+k//4)%len(notes)]*(0.5 if k%5==0 else 1)
+    add(music,tone(f,2.2,1,dec=2.2,harm=(1,.25,.1))*0.9,t0,0.05*min(1,(t0-3)/10)); t0+=1.5+0.5*(k%3); k+=1
 # --- сердцебиение с 20 с, ускоряется ---
 t=20.0
 while t<DUR-1:
@@ -83,11 +97,13 @@ subprocess.run(['ffmpeg','-v','error','-y','-i','public/voice.mp3','-ar',str(SR)
 w=wave.open('/tmp/voice44.wav'); v=np.frombuffer(w.readframes(w.getnframes()),dtype=np.int16).astype(np.float64)/32768
 voice=np.zeros(N); voice[:min(N,len(v))]=v[:N]
 envv=lp(np.abs(voice),8); envv=np.clip(envv*14,0,1)
-duck=1-0.55*envv
-mix=voice*1.0+music*duck*1.0+sfx*(1-0.25*envv)
+duck=1-0.35*envv
+mix=voice*1.0+music*duck*0.34+sfx*(1-0.25*envv)
 mix=np.tanh(mix*1.1)
 mix/= max(1e-6,np.abs(mix).max()); mix*=0.9
 st=np.stack([mix,mix*0.98],1)
 with wave.open('out/mix.wav','wb') as o:
     o.setnchannels(2); o.setsampwidth(2); o.setframerate(SR); o.writeframes((st*32767).astype(np.int16).tobytes())
-print('done',len(mix)/SR)
+sp=envv>0.5
+rv=np.sqrt(np.mean((voice[sp])**2)); rm=np.sqrt(np.mean((music*duck*0.34)[sp]**2))
+print('done',len(mix)/SR,'music/voice dB during speech:',round(20*np.log10(rm/rv),1))
