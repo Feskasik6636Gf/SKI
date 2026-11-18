@@ -1,5 +1,8 @@
 name: Render video
 on:
+  push:
+    branches: [ccr-500de865-u458bu]
+    paths: ['.github/workflows/render.yml', 'src/Bracelet.tsx', 'src/bkit.tsx', 'public/bracelet_mix.mp3']
   workflow_dispatch:
     inputs:
       composition:
@@ -14,6 +17,6 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 22, cache: npm}
       - run: npm ci
-      - run: npx remotion render src/index.ts ${{ inputs.composition }} out/video.mp4 --gl=swangle --concurrency=4
+      - run: npx remotion render src/index.ts ${{ inputs.composition || 'Bracelet' }} out/video.mp4 --gl=swangle --concurrency=4
       - uses: actions/upload-artifact@v4
-        with: {name: video-${{ inputs.composition }}, path: out/video.mp4}
+        with: {name: video-${{ inputs.composition || 'Bracelet' }}, path: out/video.mp4}
