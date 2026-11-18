@@ -1,0 +1,106 @@
+name: Render bracelet video
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  SLUG: bracelet
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      chunks: ${{ steps.c.outputs.chunks }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: c
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, re
+          n = len(re.findall(r"^@S\(", open("roblox/videos/bracelet/shots.py").read(), re.M))
+          per = 3
+          ch = [f"{a}-{min(a+per-1, n)}" for a in range(1, n+1, per)]
+          print("chunks=" + json.dumps(ch))
+          PY
+  render:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        chunk: ${{ fromJson(needs.plan.outputs.chunks) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Install Blender (bpy) and system libs
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1 libegl1 libgl1-mesa-dri libglx-mesa0 libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 ffmpeg
+          pip install -q bpy==5.3.0 numpy pillow scipy
+      - name: Render shots ${{ matrix.chunk }}
+        working-directory: roblox
+        run: |
+          xvfb-run -a python tools/render.py -- $SLUG final ${{ matrix.chunk }} ${{ vars.SAMPLES || 16 }} 2>&1 | grep -v -E "WARNING|Vulkan|Saved:" | tail -40
+          ls videos/$SLUG/frames | wc -l
+      - name: Encode chunk
+        working-directory: roblox/videos/bracelet
+        run: |
+          mkdir -p ../../chunks
+          name=$(echo "${{ matrix.chunk }}" | awk -F- '{printf "%03d", $1}')
+          ffmpeg -v error -y -framerate 30 -pattern_type glob -i 'frames/*.png' -c:v libx264 -preset veryfast -crf 12 -pix_fmt yuv420p -r 30 ../../chunks/c_$name.mp4
+          ls -la ../../chunks
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chunk-${{ matrix.chunk }}
+          path: roblox/chunks/*.mp4
+          retention-days: 3
+  finish:
+    needs: render
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Install
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1 libegl1 libgl1-mesa-dri libglx-mesa0 libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 ffmpeg
+          pip install -q bpy==5.3.0 numpy pillow scipy
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: chunk-*
+          path: roblox/chunks
+          merge-multiple: true
+      - name: Sound cues
+        working-directory: roblox
+        run: |
+          xvfb-run -a python tools/render.py -- $SLUG cues 2>&1 | grep -v -E "WARNING|Vulkan" | tail -5
+          python tools/autocues.py $SLUG
+          python tools/make_music.py $SLUG
+      - name: Concat chunks, mix, captions
+        working-directory: roblox
+        run: |
+          ls chunks | sort | sed "s#^#file 'chunks/#; s#\$#'#" > list.txt
+          ffmpeg -v error -y -f concat -safe 0 -i list.txt -c copy video_all.mp4
+          python tools/finish_bw.py $SLUG --video-in "$PWD/video_all.mp4"
+          ls -la videos/$SLUG/out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bracelet-video
+          path: |
+            roblox/videos/bracelet/out/final.mp4
+            roblox/videos/bracelet/out/final_phone.mp4
+            roblox/videos/bracelet/out/final_nocaptions.mp4
+      - name: Commit result to the branch
+        run: |
+          mkdir -p drafts
+          cp roblox/videos/bracelet/out/final_phone.mp4 drafts/bracelet_final_phone.mp4
+          cp roblox/videos/bracelet/out/final.mp4 drafts/bracelet_final.mp4
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add drafts/bracelet_final*.mp4
+          git commit -m "Render: bracelet video (final)" || exit 0
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"

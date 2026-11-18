@@ -1,2 +1,11 @@
 node_modules
 out
+roblox/videos/*/preview/
+roblox/videos/*/frames/
+roblox/videos/*/blend/
+roblox/videos/*/out/
+roblox/videos/*/render_log_*.txt
+roblox/videos/*/*.jpg
+roblox/videos/*/audio/music.wav
+roblox/chunks/
+**/__pycache__/
