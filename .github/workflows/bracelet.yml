@@ -1,6 +1,9 @@
 name: Render bracelet video
 on:
   workflow_dispatch:
+  push:
+    branches: [ccr-0f3d24d3-yitcw1]
+    paths: ['.github/workflows/bracelet.yml']
 permissions:
   contents: write
 env:
