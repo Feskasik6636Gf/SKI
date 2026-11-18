@@ -3,16 +3,17 @@ on:
   workflow_dispatch:
     inputs:
       composition:
-        description: 'Composition id (StyleDemo / Doodle)'
-        default: 'StyleDemo'
+        description: 'Composition id (Bracelet / Story / StyleDemo / Doodle)'
+        default: 'Bracelet'
 jobs:
   render:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22, cache: npm}
       - run: npm ci
-      - run: npx remotion render src/index.ts ${{ inputs.composition }} out/video.mp4 --gl=swangle
+      - run: npx remotion render src/index.ts ${{ inputs.composition }} out/video.mp4 --gl=swangle --concurrency=4
       - uses: actions/upload-artifact@v4
-        with: {name: video, path: out/video.mp4}
+        with: {name: video-${{ inputs.composition }}, path: out/video.mp4}
