@@ -10,13 +10,14 @@ const {fontFamily} = loadFont('normal', {weights: ['600', '700', '800', '900'], 
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 export const FPS = 30;
 export const DURATION = 78.9;
-const ACC = '#ff8a1f';
+export const ACC = '#ff8a1f';
+export const FONT_FAMILY = fontFamily;
 
-type W = {w: string; s: number; e: number};
+export type W = {w: string; s: number; e: number};
 const W_ALL = words as W[];
 
 // ---------- мелкие элементы ----------
-const Tag: React.FC<{x: number; y: number; text: string; color?: string; size?: number; rot?: number; scale?: number; fg?: string}> = ({x, y, text, color = '#d9482b', size = 40, rot = 0, scale = 1, fg = '#fff'}) => {
+export const Tag: React.FC<{x: number; y: number; text: string; color?: string; size?: number; rot?: number; scale?: number; fg?: string}> = ({x, y, text, color = '#d9482b', size = 40, rot = 0, scale = 1, fg = '#fff'}) => {
   const w = text.length * size * 0.66 + 56;
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${scale})`}>
@@ -27,7 +28,7 @@ const Tag: React.FC<{x: number; y: number; text: string; color?: string; size?: 
   );
 };
 
-const EQ: React.FC<{x: number; y: number; t: number; on: boolean; color: string; label: string}> = ({x, y, t, on, color, label}) => (
+export const EQ: React.FC<{x: number; y: number; t: number; on: boolean; color: string; label: string}> = ({x, y, t, on, color, label}) => (
   <g transform={`translate(${x} ${y})`}>
     <rect x="-300" y="-70" width="600" height="150" rx="26" fill="rgba(10,13,20,0.78)" stroke={color} strokeWidth="3" opacity="0.95" />
     {Array.from({length: 26}).map((_, i) => {
@@ -38,11 +39,11 @@ const EQ: React.FC<{x: number; y: number; t: number; on: boolean; color: string;
   </g>
 );
 
-const Vig: React.FC<{o?: number}> = ({o = 1}) => <rect width="1080" height="1920" fill="url(#vigD)" opacity={o} />;
+export const Vig: React.FC<{o?: number}> = ({o = 1}) => <rect width="1080" height="1920" fill="url(#vigD)" opacity={o} />;
 
 // ---------- камера ----------
-type CamCfg = {s?: [number, number]; x?: [number, number]; y?: [number, number]; r?: [number, number]; shake?: number};
-const Cam: React.FC<{lt: number; d: number; c?: CamCfg; children: React.ReactNode}> = ({lt, d, c = {}, children}) => {
+export type CamCfg = {s?: [number, number]; x?: [number, number]; y?: [number, number]; r?: [number, number]; shake?: number};
+export const Cam: React.FC<{lt: number; d: number; c?: CamCfg; children: React.ReactNode}> = ({lt, d, c = {}, children}) => {
   const p = Easing.inOut(Easing.quad)(Math.min(1, Math.max(0, lt / d)));
   const L = (a?: [number, number], def = 0) => (a ? a[0] + (a[1] - a[0]) * p : def);
   const punch = 0.045 * Math.exp(-lt * 12);
@@ -53,7 +54,7 @@ const Cam: React.FC<{lt: number; d: number; c?: CamCfg; children: React.ReactNod
 };
 
 // ---------- карточка «ПРАВИЛО» ----------
-const RuleCard: React.FC<{n: number; lt: number}> = ({n, lt}) => {
+export const RuleCard: React.FC<{n: number; lt: number}> = ({n, lt}) => {
   const {fps} = useVideoConfig();
   const p = spring({frame: Math.round(lt * fps), fps, config: {damping: 11, stiffness: 150}});
   const q = Math.min(1, Math.max(0, p));
@@ -80,7 +81,7 @@ const RuleCard: React.FC<{n: number; lt: number}> = ({n, lt}) => {
 type Ctx = {t: number; lt: number; d: number};
 type Shot = {nobanner?: boolean; a: number; b: number; loc: string; hud?: boolean; sub?: number; cam?: CamCfg; vig?: number; render: (c: Ctx) => React.ReactNode};
 
-const wave = (seed: number, n: number, w: number, h: number) =>
+export const wave = (seed: number, n: number, w: number, h: number) =>
   Array.from({length: n + 1}).map((_, i) => `${i === 0 ? 'M' : 'L'}${(i / n) * w} ${Math.sin(i * 0.9 + seed) * h * (0.35 + 0.65 * Math.abs(Math.sin(i * 0.31 + seed * 2)))}`).join(' ');
 
 const SHOTS: Shot[] = [
@@ -325,8 +326,8 @@ const SHOTS: Shot[] = [
 ];
 
 // ---------- субтитры ----------
-type Chunk = {words: W[]; a: number; b: number};
-const CHUNKS: Chunk[] = (() => {
+export type Chunk = {words: W[]; a: number; b: number};
+export const buildChunks = (W_ALL: W[]): Chunk[] => {
   const out: Chunk[] = []; let cur: W[] = [];
   const flush = () => { if (cur.length) { out.push({words: cur, a: cur[0].s, b: cur[cur.length - 1].e}); cur = []; } };
   W_ALL.forEach((w) => {
@@ -336,11 +337,12 @@ const CHUNKS: Chunk[] = (() => {
     if (/[.?!,]$/.test(w.w)) flush();
   });
   flush(); return out;
-})();
+};
+const CHUNKS = buildChunks(W_ALL);
 const KEY = ['ключ', 'зайц', 'глазк', 'двер', 'мам', 'малыш', 'голос', 'тихо', 'минут', 'кухн', 'правил', 'настоящ', 'ждать', 'жду'];
 
-const Subs: React.FC<{t: number; y: number}> = ({t, y}) => {
-  const ch = CHUNKS.find((c) => t >= c.a - 0.04 && t < c.b + 0.22);
+export const Subs: React.FC<{t: number; y: number; chunks?: Chunk[]}> = ({t, y, chunks = CHUNKS}) => {
+  const ch = chunks.find((c) => t >= c.a - 0.04 && t < c.b + 0.22);
   if (!ch) return null;
   let hlDone = false;
   return (
@@ -362,14 +364,14 @@ const Subs: React.FC<{t: number; y: number}> = ({t, y}) => {
 };
 
 // ---------- HUD ----------
-const Pill: React.FC<{children: React.ReactNode; style?: React.CSSProperties}> = ({children, style}) => (
+export const Pill: React.FC<{children: React.ReactNode; style?: React.CSSProperties}> = ({children, style}) => (
   <div style={{display: 'flex', alignItems: 'center', gap: 14, padding: '14px 26px', borderRadius: 18, background: 'rgba(10,13,20,0.74)', border: '2px solid rgba(255,138,31,0.6)', color: '#fff', fontFamily, fontWeight: 800, fontSize: 32, letterSpacing: 1, ...style}}>{children}</div>
 );
 
-const HUD: React.FC<{t: number; loc: string; rules: number}> = ({t, loc, rules}) => {
-  const secs = 18 * 3600 + 40 * 60 + Math.floor(t * 8);
+export const HUD: React.FC<{t: number; loc: string; rules: number; clock?: number; total?: number; duration?: number}> = ({t, loc, rules, clock = 18 * 3600 + 40 * 60, total = 2, duration = DURATION}) => {
+  const secs = clock + Math.floor(t * 8);
   const hh = String(Math.floor(secs / 3600)).padStart(2, '0'), mm = String(Math.floor((secs % 3600) / 60)).padStart(2, '0'), ss = String(secs % 60).padStart(2, '0');
-  const prog = t / DURATION;
+  const prog = t / duration;
   const fear = Math.round(2 + 8 * Math.pow(prog, 0.8)), noise = Math.round(1 + 7 * Math.max(0, Math.sin(prog * 9) * 0.5 + prog * 0.8));
   const bpm = Math.round(72 + prog * 60 + Math.sin(t * 6) * 2);
   const pts: string[] = [];
@@ -381,7 +383,7 @@ const HUD: React.FC<{t: number; loc: string; rules: number}> = ({t, loc, rules})
   return (
     <AbsoluteFill style={{pointerEvents: 'none'}}>
       <div style={{position: 'absolute', left: 48, top: 70}}><Pill><span style={{width: 18, height: 18, borderRadius: 9, background: '#ff3b3b', opacity: Math.floor(t * 2) % 2 ? 1 : 0.25}} /><span>ВЕЧЕР</span><span style={{color: ACC}}>{loc}</span><span style={{opacity: 0.9, marginLeft: 6}}>{hh}:{mm}:{ss}</span></Pill></div>
-      <div style={{position: 'absolute', right: 48, top: 70}}><Pill style={{fontSize: 26}}><span>ПРАВИЛА</span><span style={{display: 'flex', gap: 8}}>{[0, 1].map((i) => <span key={i} style={{width: 26, height: 26, borderRadius: 6, border: '3px solid #fff', background: i < rules ? ACC : 'transparent'}} />)}</span></Pill></div>
+      <div style={{position: 'absolute', right: 48, top: 70}}><Pill style={{fontSize: 26}}><span>ПРАВИЛА</span><span style={{display: 'flex', gap: 8}}>{Array.from({length: total}).map((_, i) => <span key={i} style={{width: 26, height: 26, borderRadius: 6, border: '3px solid #fff', background: i < rules ? ACC : 'transparent'}} />)}</span></Pill></div>
       <div style={{position: 'absolute', left: 48, top: 160, display: 'flex', gap: 14, alignItems: 'center', color: '#fff', fontFamily, fontWeight: 700, fontSize: 20, opacity: 0.9}}>
         <svg width="40" height="26" viewBox="0 0 40 26">{[0, 1, 2, 3].map((i) => <rect key={i} x={i * 10} y={20 - i * 6} width="7" height={6 + i * 6} rx="1.5" fill={i < 3 ? '#fff' : 'rgba(255,255,255,0.3)'} />)}</svg>
         <svg width="56" height="26" viewBox="0 0 56 26"><rect x="1" y="3" width="46" height="20" rx="4" fill="none" stroke="#fff" strokeWidth="2.5" /><rect x="48" y="9" width="5" height="8" rx="1" fill="#fff" /><rect x="5" y="7" width={Math.max(4, 36 - t * 0.4)} height="12" rx="2" fill={ACC} /></svg>
@@ -396,7 +398,7 @@ const HUD: React.FC<{t: number; loc: string; rules: number}> = ({t, loc, rules})
   );
 };
 
-const Banner: React.FC<{text: string; n: number; lt: number}> = ({text, n, lt}) => {
+export const Banner: React.FC<{text: string; n: number; lt: number}> = ({text, n, lt}) => {
   const p = Math.min(1, lt * 5);
   return (
     <div style={{position: 'absolute', left: 0, right: 0, top: 350, display: 'flex', justifyContent: 'center', transform: `translateY(${(1 - p) * -30}px)`, opacity: p}}>

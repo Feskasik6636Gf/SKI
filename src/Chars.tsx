@@ -257,3 +257,80 @@ export const Bunny: React.FC<{color?: string}> = ({color = '#ff9ab5'}) => (
     <path d="M90 120 q 30 -10 36 -40 q -30 -4 -36 40 Z" fill="#ff5a7a" stroke="#ff5a7a" strokeWidth="6" transform="translate(40 -10)" />
   </g>
 );
+
+// ================= ЛИЦО МАМЫ (жуткая улыбка) =================
+export const MomFace: React.FC<{smile?: number; eyeX?: number; t?: number; stare?: number}> = ({smile = 0, eyeX = 0, t = 0, stare = 1}) => {
+  const teethOpen = 20 + smile * 34;
+  const wob = Math.sin(t * 5) * 1.5;
+  return (
+    <g>
+      <defs><clipPath id="mClip"><ellipse cx="0" cy="0" rx="236" ry="262" /></clipPath></defs>
+      {/* каре сзади */}
+      <path d="M-262 -40 C -300 120 -290 300 -240 400 L 240 400 C 290 300 300 120 262 -40 Z" fill={P.momHair} />
+      <ellipse cx="0" cy="0" rx="236" ry="262" fill={P.momSkin} />
+      <g clipPath="url(#mClip)">
+        <path d="M40 -280 C 120 -120, 120 120, 40 280 L 300 280 L 300 -280 Z" fill="#c79672" opacity="0.5" />
+        <path d="M-256 -10 C -270 -266 -60 -306 30 -300 C 200 -292 270 -200 256 -10 C 210 -130 140 -110 80 -156 C 20 -90 -70 -120 -120 -160 C -150 -100 -210 -90 -256 -10 Z" fill={P.momHair} />
+        <path d="M-110 -250 Q -70 -190 -60 -140 M60 -260 Q 90 -200 80 -150" stroke="#b8b0a8" strokeWidth="5" fill="none" opacity="0.7" strokeLinecap="round" />
+      </g>
+      {/* серьги */}
+      <circle cx="-238" cy="70" r="11" fill="#e8d28a" /><circle cx="238" cy="70" r="11" fill="#e8d28a" />
+      {/* брови */}
+      <path d="M-150 -78 Q -96 -108 -42 -80" stroke="#4a3128" strokeWidth="10" strokeLinecap="round" fill="none" />
+      <path d="M42 -80 Q 96 -108 150 -78" stroke="#4a3128" strokeWidth="10" strokeLinecap="round" fill="none" />
+      {/* морщины */}
+      <path d="M-120 -128 Q 0 -150 120 -128 M-100 -112 Q 0 -128 100 -112" stroke="#b57d5a" strokeWidth="4" fill="none" opacity="0.6" />
+      <path d="M-150 30 Q -130 90 -100 130 M150 30 Q 130 90 100 130" stroke="#b57d5a" strokeWidth="5" fill="none" opacity="0.7" strokeLinecap="round" />
+      {/* глаза: широкие, не моргают */}
+      {[-92, 92].map((x) => (
+        <g key={x} transform={`translate(${x} -12)`}>
+          <ellipse cx="0" cy="0" rx="50" ry={46 * stare} fill="#fbfbf4" stroke="#8a6a58" strokeWidth="3" />
+          <circle cx={eyeX + wob} cy="2" r="18" fill="#3a2a22" />
+          <circle cx={eyeX + wob} cy="2" r="7" fill="#05070a" />
+          <circle cx={eyeX + wob + 6} cy="-6" r="4" fill="#fff" opacity="0.8" />
+          <path d="M-50 -6 Q 0 -58 50 -6" stroke="#4a3128" strokeWidth="6" fill="none" />
+          <path d="M-40 52 Q 0 70 40 52" stroke="#b57d5a" strokeWidth="5" fill="none" opacity="0.7" />
+        </g>
+      ))}
+      <ellipse cx="-130" cy="104" rx="42" ry="24" fill="#e8808a" opacity="0.35" /><ellipse cx="130" cy="104" rx="42" ry="24" fill="#e8808a" opacity="0.35" />
+      <path d="M-6 56 Q 16 90 -10 98" stroke="#b57d5a" strokeWidth="9" strokeLinecap="round" fill="none" />
+      {/* рот: слишком широкая улыбка */}
+      <g transform="translate(0 168)">
+        <path d={`M-126 -22 Q 0 ${teethOpen + 40} 126 -22 Q 0 ${-6 + smile * 10} -126 -22 Z`} fill="#4a1a22" stroke="#7a3b32" strokeWidth="6" />
+        <path d={`M-108 -14 Q 0 ${teethOpen + 18} 108 -14 L 108 -6 Q 0 ${teethOpen + 4} -108 -6 Z`} fill="#fbfbf4" />
+        {Array.from({length: 13}).map((_, i) => <line key={i} x1={-96 + i * 16} x2={-96 + i * 16} y1="-12" y2={teethOpen * 0.75} stroke="#c9c2b0" strokeWidth="2" />)}
+        <path d="M-134 -26 Q -150 -50 -140 -66 M134 -26 Q 150 -50 140 -66" stroke="#7a3b32" strokeWidth="6" fill="none" strokeLinecap="round" />
+      </g>
+    </g>
+  );
+};
+
+// Мама по пояс: сзади, голова поворачивается (theta: 0 = спиной, 180 = лицом)
+export const MomTurn: React.FC<{theta: number; t?: number; smile?: number}> = ({theta, t = 0, smile = 0}) => {
+  const rad = (theta * Math.PI) / 180;
+  const sx = Math.max(0.04, Math.abs(Math.cos(rad)));
+  const shift = Math.sin(rad) * 40;
+  return (
+    <g>
+      <ellipse cx="0" cy="340" rx="270" ry="130" fill={P.momCardShade} />
+      <rect x="-76" y="190" width="152" height="190" rx="44" fill="#c79672" />
+      <path d="M-350 620 Q -330 340 -100 322 L 0 380 L 100 322 Q 330 340 350 620 L 350 1300 L -350 1300 Z" fill={P.momCard} />
+      <path d="M70 336 Q 330 346 350 620 L 350 1300 L 70 1300 Z" fill={P.momCardShade} opacity="0.7" />
+      <path d="M-100 322 L 0 380 L 100 322 Q 0 304 -100 322 Z" fill="#41576a" />
+      <path d="M-260 640 Q -220 720 -240 820 M 230 640 Q 270 720 250 830" stroke="#41576a" strokeWidth="6" fill="none" opacity="0.8" />
+      <path d="M0 400 V 1300" stroke="#41576a" strokeWidth="4" strokeDasharray="14 10" opacity="0.7" />
+      <g transform={`translate(${shift} 0) scale(${sx} 1) rotate(${Math.sin(t * 0.7) * 1.2})`}>
+        {theta < 90 ? (
+          <g>
+            <ellipse cx="0" cy="0" rx="236" ry="262" fill={P.momHair} />
+            <path d="M-236 0 Q -250 160 -210 260 L 210 260 Q 250 160 236 0" fill={P.momHair} />
+            <path d="M-100 -230 Q -70 -90 -80 120 M0 -258 Q 10 -100 0 130 M100 -230 Q 80 -90 90 120" stroke="#7a5648" strokeWidth="6" fill="none" strokeLinecap="round" />
+            <circle cx="-236" cy="70" r="11" fill="#e8d28a" /><circle cx="236" cy="70" r="11" fill="#e8d28a" />
+          </g>
+        ) : (
+          <MomFace smile={smile} t={t} />
+        )}
+      </g>
+    </g>
+  );
+};
