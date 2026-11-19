@@ -346,7 +346,7 @@ export const Subs: React.FC<{t: number; y: number; chunks?: Chunk[]}> = ({t, y, 
   if (!ch) return null;
   let hlDone = false;
   return (
-    <div style={{position: 'absolute', left: 50, right: 50, top: y, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0 24px', fontFamily, fontWeight: 900, fontSize: 100, lineHeight: 1.12, textAlign: 'center'}}>
+    <div style={{position: 'absolute', left: 50, right: 50, top: y, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0 24px', fontFamily, fontWeight: 900, fontSize: Math.max(...ch.words.map((w) => w.w.replace(/[.,?!]/g, '').length)) > 11 ? 78 : 100, lineHeight: 1.12, textAlign: 'center'}}>
       {ch.words.map((w, i) => {
         const clean = w.w.replace(/[.,?!]/g, '');
         const key = !hlDone && KEY.some((k) => clean.toLowerCase().startsWith(k));

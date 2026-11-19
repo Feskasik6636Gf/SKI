@@ -12,7 +12,7 @@ export const DURATION2 = 76.4;
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 const CH2 = buildChunks(words2 as W[]);
 
-const Bubble: React.FC<{x: number; y: number; text: string; size?: number; color?: string; fg?: string; tail?: 'down' | 'left' | 'right'; scale?: number; rot?: number}> = ({x, y, text, size = 56, color = '#fff', fg = '#10141b', tail = 'down', scale = 1, rot = 0}) => {
+export const Bubble: React.FC<{x: number; y: number; text: string; size?: number; color?: string; fg?: string; tail?: 'down' | 'left' | 'right'; scale?: number; rot?: number}> = ({x, y, text, size = 56, color = '#fff', fg = '#10141b', tail = 'down', scale = 1, rot = 0}) => {
   const lines = text.split('\n');
   const w = Math.max(...lines.map((l) => l.length)) * size * 0.72 + 80;
   const h = lines.length * size * 1.2 + 40;
@@ -25,13 +25,13 @@ const Bubble: React.FC<{x: number; y: number; text: string; size?: number; color
     </g>
   );
 };
-const pop = (lt: number, at: number, k = 6) => Math.min(1, Math.max(0, (lt - at) * k));
+export const pop = (lt: number, at: number, k = 6) => Math.min(1, Math.max(0, (lt - at) * k));
 
 type Ctx = {t: number; lt: number; d: number};
 type Shot = {a: number; b: number; loc: string; hud?: boolean; sub?: number; nobanner?: boolean; cam?: CamCfg; vig?: number; render: (c: Ctx) => React.ReactNode};
 
 // ---------- две мамы: сплит ----------
-const SplitMoms: React.FC<{t: number; bubbleAt: number | null; sync: number; q?: boolean}> = ({t, bubbleAt, sync, q}) => {
+export const SplitMoms: React.FC<{t: number; bubbleAt: number | null; sync: number; q?: boolean}> = ({t, bubbleAt, sync, q}) => {
   const b = bubbleAt !== null && t >= bubbleAt;
   const bp = bubbleAt !== null ? pop(t, bubbleAt, 7) : 0;
   return (

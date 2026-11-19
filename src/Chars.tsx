@@ -30,6 +30,7 @@ export const Defs: React.FC = () => (
       <rect width="1080" height="70" fill="#2a2a33" /><rect y="66" width="1080" height="4" fill="#15151c" />
       <path d="M200 0 V 66 M560 0 V 66 M880 0 V 66" stroke="#15151c" strokeWidth="3" />
     </pattern>
+    <filter id="cyanTint"><feColorMatrix type="matrix" values="0.55 0 0 0 0  0.3 0.9 0.3 0 0.05  0.3 0.3 1 0 0.1  0 0 0 1 0" /></filter>
     <linearGradient id="moonSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#101a30" /><stop offset="1" stopColor="#2b3d5c" /></linearGradient>
     <radialGradient id="vigD" cx="0.5" cy="0.5" r="0.75"><stop offset="0.45" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity="0.78" /></radialGradient>
     <radialGradient id="warmGlow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stopColor="#ffd98a" stopOpacity="0.55" /><stop offset="1" stopColor="#ffd98a" stopOpacity="0" /></radialGradient>
@@ -259,7 +260,7 @@ export const Bunny: React.FC<{color?: string}> = ({color = '#ff9ab5'}) => (
 );
 
 // ================= ЛИЦО МАМЫ (жуткая улыбка) =================
-export const MomFace: React.FC<{smile?: number; eyeX?: number; t?: number; stare?: number}> = ({smile = 0, eyeX = 0, t = 0, stare = 1}) => {
+export const MomFace: React.FC<{smile?: number; eyeX?: number; t?: number; stare?: number; real?: boolean; blink?: number; tear?: number; talk?: number}> = ({smile = 0, eyeX = 0, t = 0, stare = 1, real = false, blink = 0, tear = 0, talk = 0}) => {
   const teethOpen = 20 + smile * 34;
   const wob = Math.sin(t * 5) * 1.5;
   return (
@@ -276,17 +277,16 @@ export const MomFace: React.FC<{smile?: number; eyeX?: number; t?: number; stare
       {/* серьги */}
       <circle cx="-238" cy="70" r="11" fill="#e8d28a" /><circle cx="238" cy="70" r="11" fill="#e8d28a" />
       {/* брови */}
-      <path d="M-150 -78 Q -96 -108 -42 -80" stroke="#4a3128" strokeWidth="10" strokeLinecap="round" fill="none" />
-      <path d="M42 -80 Q 96 -108 150 -78" stroke="#4a3128" strokeWidth="10" strokeLinecap="round" fill="none" />
+      {real ? (<><path d="M-150 -60 Q -96 -84 -42 -96" stroke="#4a3128" strokeWidth="10" strokeLinecap="round" fill="none" /><path d="M42 -96 Q 96 -84 150 -60" stroke="#4a3128" strokeWidth="10" strokeLinecap="round" fill="none" /></>) : (<><path d="M-150 -78 Q -96 -108 -42 -80" stroke="#4a3128" strokeWidth="10" strokeLinecap="round" fill="none" /><path d="M42 -80 Q 96 -108 150 -78" stroke="#4a3128" strokeWidth="10" strokeLinecap="round" fill="none" /></>)}
       {/* морщины */}
       <path d="M-120 -128 Q 0 -150 120 -128 M-100 -112 Q 0 -128 100 -112" stroke="#b57d5a" strokeWidth="4" fill="none" opacity="0.6" />
       <path d="M-150 30 Q -130 90 -100 130 M150 30 Q 130 90 100 130" stroke="#b57d5a" strokeWidth="5" fill="none" opacity="0.7" strokeLinecap="round" />
       {/* глаза: широкие, не моргают */}
       {[-92, 92].map((x) => (
         <g key={x} transform={`translate(${x} -12)`}>
-          <ellipse cx="0" cy="0" rx="50" ry={46 * stare} fill="#fbfbf4" stroke="#8a6a58" strokeWidth="3" />
-          <circle cx={eyeX + wob} cy="2" r="18" fill="#3a2a22" />
-          <circle cx={eyeX + wob} cy="2" r="7" fill="#05070a" />
+          <ellipse cx="0" cy="0" rx={real ? 46 : 50} ry={(real ? 40 : 46 * stare) * (1 - blink)} fill="#fbfbf4" stroke="#8a6a58" strokeWidth="3" />
+          <circle cx={eyeX + (real ? 0 : wob)} cy="2" r={real ? 22 : 18} fill="#3a2a22" opacity={1 - blink} />
+          <circle cx={eyeX + (real ? 0 : wob)} cy="2" r={real ? 11 : 7} fill="#05070a" opacity={1 - blink} />
           <circle cx={eyeX + wob + 6} cy="-6" r="4" fill="#fff" opacity="0.8" />
           <path d="M-50 -6 Q 0 -58 50 -6" stroke="#4a3128" strokeWidth="6" fill="none" />
           <path d="M-40 52 Q 0 70 40 52" stroke="#b57d5a" strokeWidth="5" fill="none" opacity="0.7" />
@@ -294,13 +294,19 @@ export const MomFace: React.FC<{smile?: number; eyeX?: number; t?: number; stare
       ))}
       <ellipse cx="-130" cy="104" rx="42" ry="24" fill="#e8808a" opacity="0.35" /><ellipse cx="130" cy="104" rx="42" ry="24" fill="#e8808a" opacity="0.35" />
       <path d="M-6 56 Q 16 90 -10 98" stroke="#b57d5a" strokeWidth="9" strokeLinecap="round" fill="none" />
-      {/* рот: слишком широкая улыбка */}
+      {real && tear > 0 && <path d="M-110 50 Q -118 110 -106 160 M110 50 Q 118 110 106 160" stroke="#bfe6ff" strokeWidth="8" fill="none" strokeLinecap="round" opacity={tear} />}
+      {real ? (
+        <g transform="translate(0 176)">
+          {talk > 0 ? <ellipse cx="0" cy="0" rx={26 + Math.abs(Math.sin(t * 14)) * 12} ry={10 + Math.abs(Math.sin(t * 11)) * 18} fill="#5a1f1f" /> : <path d="M-52 10 Q 0 -18 52 10" stroke="#9a4a42" strokeWidth="12" fill="none" strokeLinecap="round" />}
+        </g>
+      ) : (
       <g transform="translate(0 168)">
         <path d={`M-126 -22 Q 0 ${teethOpen + 40} 126 -22 Q 0 ${-6 + smile * 10} -126 -22 Z`} fill="#4a1a22" stroke="#7a3b32" strokeWidth="6" />
         <path d={`M-108 -14 Q 0 ${teethOpen + 18} 108 -14 L 108 -6 Q 0 ${teethOpen + 4} -108 -6 Z`} fill="#fbfbf4" />
         {Array.from({length: 13}).map((_, i) => <line key={i} x1={-96 + i * 16} x2={-96 + i * 16} y1="-12" y2={teethOpen * 0.75} stroke="#c9c2b0" strokeWidth="2" />)}
         <path d="M-134 -26 Q -150 -50 -140 -66 M134 -26 Q 150 -50 140 -66" stroke="#7a3b32" strokeWidth="6" fill="none" strokeLinecap="round" />
       </g>
+      )}
     </g>
   );
 };
@@ -334,3 +340,42 @@ export const MomTurn: React.FC<{theta: number; t?: number; smile?: number}> = ({
     </g>
   );
 };
+
+// Мама спереди по пояс (настоящая): начало координат — центр головы
+export const MomFront: React.FC<{t?: number; blink?: number; tear?: number; talk?: number; shake?: number; keys?: boolean}> = ({t = 0, blink = 0, tear = 0, talk = 0, shake = 1, keys = true}) => {
+  const tr = Math.sin(t * 38) * 3 * shake;
+  return (
+    <g>
+      <ellipse cx="0" cy="340" rx="270" ry="130" fill={P.momCardShade} />
+      <rect x="-76" y="190" width="152" height="190" rx="44" fill="#c79672" />
+      <path d="M-350 620 Q -330 340 -100 322 L 0 420 L 100 322 Q 330 340 350 620 L 350 1500 L -350 1500 Z" fill={P.momCard} />
+      <path d="M70 336 Q 330 346 350 620 L 350 1500 L 70 1500 Z" fill={P.momCardShade} opacity="0.7" />
+      <path d="M-100 322 L 0 420 L 100 322 Q 0 300 -100 322 Z" fill="#e8e0cc" />
+      <path d="M0 420 V 1500" stroke="#41576a" strokeWidth="4" />
+      {[520, 680, 840, 1000].map((y) => <circle key={y} cx="-24" cy={y} r="14" fill="#e8d28a" stroke="#41576a" strokeWidth="3" />)}
+      {/* карман с ключами */}
+      <path d="M-250 940 H -80 V 1100 H -250 Z" fill={P.momCardShade} stroke="#41576a" strokeWidth="5" />
+      {keys && <g transform="translate(-170 940)"><path d="M0 0 L -10 -60" stroke="#d9a441" strokeWidth="18" strokeLinecap="round" /><circle cx="-12" cy="-80" r="26" fill="none" stroke="#d9a441" strokeWidth="12" /><path d="M20 0 L 40 -50" stroke="#c9c2b0" strokeWidth="6" /><g transform="translate(48 -66)"><ellipse cx="-6" cy="-22" rx="7" ry="18" fill="#f4dce4" stroke={INK} strokeWidth="3" /><ellipse cx="9" cy="-22" rx="7" ry="18" fill="#f4dce4" stroke={INK} strokeWidth="3" /><circle r="20" fill="#f4dce4" stroke={INK} strokeWidth="3" /></g></g>}
+      {/* руки (бледные, трясутся) */}
+      {[-1, 1].map((sd) => (
+        <g key={sd} transform={`translate(${sd * 190 + tr * sd} ${760 + tr * 0.5})`}>
+          <rect x="-46" y="-120" width="92" height="300" rx="46" fill={P.momCard} />
+          <rect x="-50" y="130" width="100" height="90" rx="40" fill="#efd9cf" stroke="#a8714f" strokeWidth="5" />
+          {[0, 1, 2, 3].map((i) => <rect key={i} x={-48 + i * 25} y="190" width="22" height={78 - Math.abs(i - 1.5) * 8} rx="11" fill="#efd9cf" stroke="#a8714f" strokeWidth="4" />)}
+          <rect x={sd > 0 ? -66 : 44} y="150" width="22" height="64" rx="11" fill="#efd9cf" stroke="#a8714f" strokeWidth="4" transform={`rotate(${sd * 14} 0 170)`} />
+        </g>
+      ))}
+      <MomFace real t={t} blink={blink} tear={tear} talk={talk} />
+    </g>
+  );
+};
+
+export const HandUp: React.FC<{t?: number; color?: string}> = ({t = 0, color = P.skin}) => (
+  <g>
+    <rect x="-60" y="120" width="120" height="400" rx="50" fill={P.hood} />
+    <ellipse cx="0" cy="70" rx="95" ry="110" fill={color} stroke="#b57d5a" strokeWidth="6" />
+    {[[-70, -10, -6], [-26, -60, -2], [22, -70, 2], [66, -40, 8]].map(([x, y, r], i) => <rect key={i} x={x - 22} y={y - 120} width="44" height="150" rx="22" fill={color} stroke="#b57d5a" strokeWidth="6" transform={`rotate(${r + Math.sin(t * 6 + i) * 1.5} ${x} ${y})`} />)}
+    <rect x="-132" y="20" width="44" height="110" rx="22" fill={color} stroke="#b57d5a" strokeWidth="6" transform="rotate(-38 -110 80)" />
+    <path d="M-30 90 Q 0 110 30 90" stroke="#c28a68" strokeWidth="5" fill="none" strokeLinecap="round" />
+  </g>
+);
